@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>五子棋</title>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(15, 40px);
+            grid-template-rows: repeat(15, 40px);
+            background: #e4b04d;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .cell {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .cell::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #000;
+        }
+
+        .horizontal-line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: #000;
+            top: 50%;
+        }
+
+        .vertical-line {
+            position: absolute;
+            width: 1px;
+            height: 100%;
+            background: #000;
+            left: 50%;
+        }
+
+        .stone {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            z-index: 1;
+            transition: transform 0.2s;
+        }
+
+        .stone.black {
+            background: #000;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .stone.white {
+            background: #fff;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 24px;
+            font-family: Arial;
+        }
+
+        .reset-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="board" id="board"></div>
+        <div class="status" id="status">黑方回合</div>
+        <button class="reset-btn" onclick="resetGame()">重新开始</button>
+    </div>
+
+    <script>
+        const BOARD_SIZE = 15;
+        let currentPlayer = 'black';
+        let gameOver = false;
+        const board = [];
+        const directions = [
+            [1, 0],  // 水平
+            [0, 1],  // 垂直
+            [1, 1],  // 正对角线
+            [1, -1]  // 反对角线
+        ];
+
+        // 初始化棋盘
+        function initBoard() {
+            const boardElement = document.getElementById('board');
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                board[i] = new Array(BOARD_SIZE).fill(null);
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+
+                    // 添加网格线
+                    cell.appendChild(document.createElement('div')).className = 'horizontal-line';
+                    cell.appendChild(document.createElement('div')).className = 'vertical-line';
+
+                    cell.addEventListener('click', () => handleClick(i, j));
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 处理点击事件
+        function handleClick(row, col) {
+            if (gameOver || board[row][col]) return;
+
+            // 放置棋子
+            placeStone(row, col);
+
+            // 检查胜利
+            if (checkWin(row, col)) {
+                gameOver = true;
+                document.getElementById('status').textContent =
+                    `${currentPlayer === 'black' ? '黑方' : '白方'}获胜！`;
+                return;
+            }
+
+            // 切换玩家
+            currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+            updateStatus();
+        }
+
+        // 放置棋子
+        function placeStone(row, col) {
+            const stone = document.createElement('div');
+            stone.className = `stone ${currentPlayer}`;
+            document.querySelector(`[data-row="${row}"][data-col="${col}"]`).appendChild(stone);
+            board[row][col] = currentPlayer;
+        }
+
+        // 检查胜利条件
+        function checkWin(row, col) {
+            const player = board[row][col];
+
+            for (const [dx, dy] of directions) {
+                let count = 1;
+
+                // 正向检查
+                let x = row + dx;
+                let y = col + dy;
+                while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === player) {
+                    count++;
+                    x += dx;
+                    y += dy;
+                }
+
+                // 反向检查
+                x = row - dx;
+                y = col - dy;
+                while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE && board[x][y] === player) {
+                    count++;
+                    x -= dx;
+                    y -= dy;
+                }
+
+                if (count >= 5) return true;
+            }
+            return false;
+        }
+
+        // 更新状态显示
+        function updateStatus() {
+            document.getElementById('status').textContent =
+                `${currentPlayer === 'black' ? '黑方' : '白方'}回合`;
+        }
+
+        // 重置游戏
+        function resetGame() {
+            const cells = document.getElementsByClassName('cell');
+            for (let cell of cells) {
+                const stones = cell.getElementsByClassName('stone');
+                while (stones.length > 0) {
+                    stones[0].remove();
+                }
+            }
+
+            currentPlayer = 'black';
+            gameOver = false;
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    board[i][j] = null;
+                }
+            }
+            updateStatus();
+        }
+
+        // 初始化游戏
+        initBoard();
+    </script>
+</body>
+
+</html>
